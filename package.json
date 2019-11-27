@@ -1,15 +1,8 @@
 {
-  "name": "hello-blockstack",
-  "version": "0.0.0",
-  "description": "A simple Blockstack app using ReactJS",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/blockstack/hello-blockstack.git"
-  },
-  "bugs": {
-    "url": "https://github.com/blockstack/hello-blockstack/issues"
-  },
-  "author": "",
+  "name": "Apollos",
+  "version": "0.0.5",
+  "description": "Zero gravity space shooter",
+  "author": "Lava Games",
   "license": "MIT",
   "dependencies": {
     "blockstack": "^19.2.5",
