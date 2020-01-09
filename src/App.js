@@ -17,7 +17,7 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.unityContent = new UnityContent(
-      "Build/Apollos - WebGL Build.json",
+      "Build/Apollos WebGL Build.json",
       "Build/UnityLoader.js",
       { adjustOnWindowResize: true }
     );
@@ -237,14 +237,6 @@ export default class App extends Component {
           height={unityContainerStyle.height}
           className="unityContainer"
         />
-        {/* <div className="footer">
-          <div className="webgl-logo"></div>
-          <button
-            className="fullscreen"
-            onClick={this.setFullScreen.bind(this)}
-          ></button>
-          <div className="title customtitle">Fullscreen</div>
-        </div> */}
       </div>
     );
   }
