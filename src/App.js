@@ -26,7 +26,7 @@ export default class App extends Component {
       try {
         this.unityProgress(progress);
       } catch (error) {
-        console.log(error);
+        console.log("Error in event->on.progress; Reason: " + error);
       }
     });
 
@@ -34,7 +34,7 @@ export default class App extends Component {
       try {
         this.handleSignIn();
       } catch (error) {
-        console.log(error);
+        console.log("Error in event->on.Login; Reason: " + error);
       }
     });
 
@@ -49,7 +49,7 @@ export default class App extends Component {
               this.sendUserData();
             })
             .catch(err => {
-              console.log(err);
+              console.log("Error in event->on.IsLoggedIn; Reason: " + err);
               if (err.message.includes("Existing user session")) {
                 this.sendUserData();
               } else {
@@ -60,7 +60,9 @@ export default class App extends Component {
           this.unityContent.send("UI", "OnUserNotLoggedIn");
         }
       } catch (error) {
-        console.log(error);
+        console.log(
+          "Error in event->on.IsLoggedIn outer catch block; Reason: " + error
+        );
       }
     });
 
@@ -68,44 +70,68 @@ export default class App extends Component {
       try {
         userSession.signUserOut();
       } catch (error) {
-        console.log(error);
+        console.log("Error in event->on.Logout; Reason: " + error);
       }
     });
 
     this.unityContent.on("SavePlayerData", data => {
       try {
-        const options = { encrypt: false };
-        userSession.putFile("apollos_player_data.json", data, options);
+        if (
+          userSession !== undefined &&
+          userSession !== null &&
+          userSession.isUserSignedIn &&
+          !userSession.isSignInPending()
+        ) {
+          if (data !== undefined && data !== null) {
+            const options = { encrypt: false };
+            userSession.putFile("apollos_player_data.json", data, options);
+          }
+        }
       } catch (error) {
-        console.log(error);
+        console.log("Error in event->on.SavePlayerData; Reason: " + error);
       }
     });
 
     this.unityContent.on("RequestPlayerData", () => {
       try {
-        const options = { decrypt: false };
-        userSession
-          .getFile("apollos_player_data.json", options)
-          .then(file => {
-            try {
-              var playerData = JSON.parse(file || "");
-              var playerDataString = JSON.stringify(playerData);
-              this.unityContent.send(
-                "UI",
-                "ReceivePlayerData",
-                playerDataString
+        if (
+          userSession !== undefined &&
+          userSession !== null &&
+          userSession.isUserSignedIn
+        ) {
+          const options = { decrypt: false };
+          userSession
+            .getFile("apollos_player_data.json", options)
+            .then(file => {
+              try {
+                var playerData = JSON.parse(file || "");
+                var playerDataString = JSON.stringify(playerData);
+                this.unityContent.send(
+                  "UI",
+                  "ReceivePlayerData",
+                  playerDataString
+                );
+              } catch (error) {
+                console.log(
+                  "Error in event->on.RequestPlayerData.getFile.then; Reason: " +
+                    error
+                );
+                this.unityContent.send("UI", "ReceivePlayerData", "");
+              }
+            })
+            .catch(error => {
+              console.log(
+                "Error in event->on.RequestPlayerData.getFile promise; Reason: " +
+                  error
               );
-            } catch (error) {
-              console.log(error);
               this.unityContent.send("UI", "ReceivePlayerData", "");
-            }
-          })
-          .catch(error => {
-            console.log(error);
-            this.unityContent.send("UI", "ReceivePlayerData", "");
-          });
+            });
+        }
       } catch (error) {
-        console.log(error);
+        console.log(
+          "Error in event->on.RequestPlayerData outer catch block; Reason: " +
+            error
+        );
       }
     });
   }
@@ -118,17 +144,22 @@ export default class App extends Component {
         userSession
           .handlePendingSignIn()
           .then(userData => {
-            this.sendUserData();
+            this.sendUserData(userData);
           })
           .catch(err => {
-            console.log(err);
+            console.log(
+              "Error in handleSignIn->handlePendingSignIn promise; Reason: " +
+                err
+            );
+            userSession.signUserOut();
             userSession.redirectToSignIn();
           });
       } else {
+        userSession.signUserOut();
         userSession.redirectToSignIn();
       }
     } catch (error) {
-      console.log(error);
+      console.log("Error in handleSignIn outer catch block; Reason: " + error);
     }
   }
 
@@ -169,12 +200,34 @@ export default class App extends Component {
       if (userData === undefined) {
         userData = userSession.loadUserData();
       }
-      var person = new Person(userData.profile);
-      var dataToSend =
-        userData.username.split(".")[0] + ";" + person.avatarUrl();
-      this.unityContent.send("UI", "OnUserLoggedIn", dataToSend);
+      if (userData !== undefined) {
+        var person = new Person(userData.profile);
+        var username = userData.username;
+        var givenname = person.givenName();
+        var name = "Anonymous";
+        if (username !== undefined && username != null && username !== "") {
+          name = username;
+        } else if (
+          givenname !== undefined &&
+          givenname != null &&
+          givenname !== ""
+        ) {
+          name = givenname;
+        }
+        var avatar = "";
+        var avatarUrl = person.avatarUrl();
+        if (avatarUrl !== null && avatarUrl !== undefined && avatarUrl !== "") {
+          avatar = avatarUrl;
+        }
+        var dataToSend = name + ";" + avatar;
+        this.unityContent.send("UI", "OnUserLoggedIn", dataToSend);
+      } else {
+        alert("Unable to get login information. Try again later.");
+        userSession.signUserOut();
+      }
     } catch (error) {
-      console.log(error);
+      userSession.signUserOut();
+      console.log("Error in sendUserData; Reason: " + error);
     }
   }
 
@@ -182,7 +235,7 @@ export default class App extends Component {
     try {
       userSession.signUserOut(window.location.origin);
     } catch (error) {
-      console.log(error);
+      console.log("Error in handleSignOut; Reason: " + error);
     }
   }
 
@@ -190,7 +243,7 @@ export default class App extends Component {
     try {
       this.unityContent.unityInstance.SetFullscreen(1);
     } catch (err) {
-      console.log(err);
+      console.log("Error in setFullScreen; Reason: " + err);
     }
   }
 

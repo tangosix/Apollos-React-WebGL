@@ -1,7 +1,7 @@
 {
 "companyName": "Lava Games",
 "productName": "Apollos",
-"productVersion": "0.70",
+"productVersion": "0.71",
 "dataUrl": "Apollos WebGL Build.data.unityweb",
 "wasmCodeUrl": "Apollos WebGL Build.wasm.code.unityweb",
 "wasmFrameworkUrl": "Apollos WebGL Build.wasm.framework.unityweb",
